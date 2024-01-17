@@ -1,0 +1,23 @@
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Define the Gini calculation function (as previously provided)
+
+# Creating synthetic data
+set.seed(123) # for reproducibility
+n <- 1000 # number of observations
+income <- rnorm(n, mean = 50000, sd = 15000) # generate normal distributed income
+weight <- runif(n, min = 1, max = 5) # generate random weights
+
+# Create a dataframe
+synthetic_data <- data.frame(income = income, weight = weight)
+
+# Test the function with synthetic data
+result <- calculate_gini(synthetic_data, "income", "weight", TRUE)
+
+# Print the Gini coefficient
+print(paste("Gini Coefficient:", result$gini_coefficient))
+
+# Plot the Lorenz Curve (if TRUE was passed to plot_lorenz)
+print(result$lorenz_plot)
