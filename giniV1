@@ -1,0 +1,58 @@
+calculate_gini <- function(data, income_var, weight_var, plot_lorenz = FALSE) {
+    library(dplyr)
+    library(ggplot2)
+
+    # Preparing the data
+    data <- data %>%
+        group_by(!!sym(income_var)) %>%
+        summarise(
+            count = sum(!!sym(weight_var)),
+            percent = (count / sum(count)) * 100
+        ) %>%
+        arrange(!!sym(income_var))
+
+    # Cumulative calculations
+    data <- data %>%
+        mutate(
+            cum_income = cumsum(!!sym(income_var) * count),
+            cum_percent = cumsum(percent)
+        )
+
+    # Total income and percent income
+    total_income <- tail(data$cum_income, 1)
+    data <- data %>%
+        mutate(percent_income = (cum_income / total_income) * 100)
+
+    # Gini calculation
+    data <- data %>%
+        mutate(
+            xlag = lag(cum_percent / 100, default = 0),
+            ylag = lag(percent_income / 100, default = 0),
+            column_a = (percent_income / 100) * xlag,
+            column_b = (cum_percent / 100) * ylag
+        ) %>%
+        summarise(
+            gini = 1 - 2 * (sum(column_a) - sum(column_b))
+        )
+
+    gini_coefficient <- data$gini
+
+    # Optional Lorenz Curve Plotting
+    if (plot_lorenz) {
+        data <- data %>%
+            group_by(cum_percent) %>%
+            summarise(percent_income = last(percent_income))
+
+        ggplot(data, aes(x = cum_percent, y = percent_income)) +
+            geom_line() +
+            labs(title = "Lorenz Curve", x = "Cumulative Population Percentage", y = "Cumulative Income Percentage") +
+            theme_minimal()
+    }
+
+    return(list(gini_coefficient = gini_coefficient, lorenz_plot = last_plot()))
+}
+
+# Example usage:
+# result <- calculate_gini(data, "income_var_name", "weight_var_name", TRUE)
+# print(result$gini_coefficient)
+# print(result$lorenz_plot)
